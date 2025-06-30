@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Display Mod</title>
+    <style>
+        @font-face {
+            font-family: 'CustomFont';
+            src: url('font.ttf.woff2') format('woff2');
+        }
+        body {
+            font-family: 'CustomFont', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            overflow-x: hidden;
+            cursor: default;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 3em;
+            margin-bottom: 30px;
+            color: #4CAF50;
+        }
+        .content {
+            background-color: #2d2d2d;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        .download-section {
+            text-align: center;
+            margin-top: 40px;
+        }
+        .download-btn {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.3s, transform 0.2s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .download-btn:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+        }
+        .version-info {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #aaaaaa;
+        }
+        .triangle {
+            position: absolute;
+            width: 0;
+            height: 0;
+            pointer-events: none;
+            transform-origin: center;
+        }
+        .menu {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .menu-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'CustomFont', sans-serif;
+            font-size: 1em;
+            transition: background-color 0.3s;
+        }
+        .menu-btn:hover {
+            background-color: #45a049;
+        }
+        .menu-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: #2d2d2d;
+            min-width: 200px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            border-radius: 5px;
+            padding: 10px;
+            animation: slideDown 0.3s ease-out;
+        }
+        .menu-content a {
+            color: white;
+            padding: 8px 12px;
+            text-decoration: none;
+            display: block;
+            transition: background-color 0.2s;
+        }
+        .menu-content a:hover {
+            background-color: #3d3d3d;
+        }
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="menu">
+        <button class="menu-btn" id="menuBtn">菜单</button>
+        <div class="menu-content" id="menuContent">
+            <a href="#" id="introLink">介绍</a>
+            <a href="#" id="downloadLink">下载</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>此模组是什么？</h1>
+        
+        <div class="content" id="introContent">
+            <p>是一个显示服务器信息以便玩家在游戏中更直观看到的客户端与服务器都需要装的双端模组</p>
+            <p>然后还有模组意志</p>
+            <p>致力于让我的世界玩家进入服务器后获得更好的体验！</p>
+        </div>
+
+        <div class="content" id="downloadContent" style="display: none;">
+            <div class="download-section">
+                <a href="#" class="download-btn" id="downloadBtn">下载最新版本</a>
+                <div class="version-info" id="versionInfo">正在获取版本信息...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuBtn = document.getElementById('menuBtn');
+            const menuContent = document.getElementById('menuContent');
+            const introLink = document.getElementById('introLink');
+            const downloadLink = document.getElementById('downloadLink');
+            const introContent = document.getElementById('introContent');
+            const downloadContent = document.getElementById('downloadContent');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const versionInfo = document.getElementById('versionInfo');
+
+            let latestVersion = '';
+            let buildVersion = '';
+
+            menuBtn.addEventListener('click', function() {
+                menuContent.style.display = menuContent.style.display === 'block' ? 'none' : 'block';
+            });
+
+            introLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                introContent.style.display = 'block';
+                downloadContent.style.display = 'none';
+                menuContent.style.display = 'none';
+            });
+
+            downloadLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                introContent.style.display = 'none';
+                downloadContent.style.display = 'block';
+                menuContent.style.display = 'none';
+            });
+
+            document.addEventListener('click', function(e) {
+                if (e.target !== menuBtn && e.target !== menuContent && !menuContent.contains(e.target)) {
+                    menuContent.style.display = 'none';
+                }
+            });
+
+            document.addEventListener('click', function(e) {
+                if (e.target.tagName !== 'A' && e.target.tagName !== 'BUTTON' && e.target.className.indexOf('triangle') === -1) {
+                    createTriangle(e.clientX, e.clientY);
+                }
+            });
+
+            function createTriangle(x, y) {
+                const triangle = document.createElement('div');
+                triangle.className = 'triangle';
+                
+                const size = Math.random() * 20 + 10;
+                const color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                
+                triangle.style.left = `${x}px`;
+                triangle.style.top = `${y}px`;
+                triangle.style.borderLeft = `${size}px solid transparent`;
+                triangle.style.borderRight = `${size}px solid transparent`;
+                triangle.style.borderBottom = `${size * 2}px solid ${color}`;
+                
+                document.body.appendChild(triangle);
+                
+                const animationDuration = Math.random() * 3 + 2;
+                const rotation = Math.random() * 360;
+                const parabolaHeight = Math.random() * 200 + 100;
+                const parabolaDistance = (Math.random() - 0.5) * 400;
+                
+                triangle.style.transform = `rotate(${rotation}deg)`;
+                triangle.style.transition = `all ${animationDuration}s linear`;
+                
+                setTimeout(() => {
+                    triangle.style.transform = `rotate(${rotation + 360}deg) translate(${parabolaDistance}px, ${parabolaHeight + window.innerHeight}px)`;
+                    triangle.style.opacity = '0';
+                }, 10);
+                
+                setTimeout(() => {
+                    document.body.removeChild(triangle);
+                }, animationDuration * 1000);
+            }
+
+            function fetchVersionInfo() {
+                fetch('https://raw.githubusercontent.com/cleanper/Server_Display-1.21.1-NeoforgeMod/refs/heads/main/version.json')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        latestVersion = data.latest_version;
+                        const versionParts = latestVersion.split('+build.');
+                        const baseVersion = versionParts[0];
+                        buildVersion = versionParts[1];
+                        
+                        versionInfo.textContent = `当前最新版本: ${latestVersion}`;
+                        
+                        downloadBtn.href = `https://github.com/cleanper/Server_Display-1.21.1-NeoforgeMod/releases/download/vserver_display-${baseVersion}%2Bbuild.${buildVersion}/server_display-${latestVersion}.jar`;
+                    })
+                    .catch(error => {
+                        console.error('Error fetching version info:', error);
+                        versionInfo.textContent = '无法获取版本信息';
+                    });
+            }
+
+            fetchVersionInfo();
+        });
+    </script>
+</body>
+</html>
